@@ -1,0 +1,34 @@
+{
+    "timestam": 1540478429000,
+    "weather": "1",
+    "list": [   
+        {
+            "title" : "平台挂牌房源量(套)",
+            "num": 9990.99,
+            "upNum": 668,
+            "upRate": "11.2",
+            "downRate": ""
+        },
+        {
+            "title" : "平台挂牌房源量(套)",
+            "num": 9919.99,
+            "upNum": 668,
+            "upRate": "",
+            "downRate": "8.6" 
+        },
+        {
+            "title" : "平台挂牌房源量(套)",
+            "num": 9949.99,
+            "upNum": 668,
+            "upRate": "11.2",
+            "downRate": ""
+        },
+        { 
+            "title" : "平台挂牌房源量(套)",
+            "num": 1999.9,
+            "upNum": 668,
+            "upRate": "",
+            "downRate": "9.9"
+        }
+    ]
+}

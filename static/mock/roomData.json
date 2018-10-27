@@ -1,0 +1,11 @@
+[   
+    {
+        "secondHouse" : "平台挂牌房源量(套)",
+        "renting": 999.99,
+        "newHouse": 668,
+        "rate": 11.2,
+        "appendSecondHouse": 1.775,
+        "appendrenting": 1.22,
+        "appendnewHouse": 1.11
+    }
+]
