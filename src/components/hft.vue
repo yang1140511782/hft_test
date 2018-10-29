@@ -58,7 +58,7 @@
                                     {{houseData.todayScondHouse}}
                                 </div>
                                 <div class="item-default" ref="default">
-                                    <div class="item-proportion todayScondHouse" ref="proportion"></div>
+                                    <div class="item-proportion todayScondHouse"></div>
                                 </div>
                             </div>
                             
@@ -68,7 +68,7 @@
                                     {{houseData.todayRenting}}
                                 </div>
                                 <div class="item-default" ref="default">
-                                    <div class="item-proportion todayRenting" ref="proportion"></div>
+                                    <div class="item-proportion todayRenting"></div>
                                 </div>
                             </div>
                             <div>
@@ -77,7 +77,7 @@
                                     {{houseData.todayNewHouse}}
                                 </div>
                                 <div class="item-default" ref="default">
-                                    <div class="item-proportion todayNewHouse" ref="proportion"></div>
+                                    <div class="item-proportion todayNewHouse"></div>
                                 </div>
                             </div>
                         </div>
@@ -96,8 +96,15 @@
                 </div>
             </div>
 
-            <div class="main-map" id="main-maps">
+            <div class="main-map">
+				<div id="main-maps">
 
+				</div>
+				<div class="point" ref="point">
+					<p>{{mapInfo.title}}</p>
+					<p>{{mapInfo.city}}</p>
+					<p>{{mapInfo.price}}</p>
+				</div>
             </div>
         
             <div class="main-order">
@@ -171,11 +178,13 @@
         <!-- 底部 -->
         <footer>
             <div class="news-left" id="news-left" ref="news-left">                      
-                  <ul id="con1">
+                <ul id="con1">
                     <li v-for=" (item, index) in newsList" :key="index">
-                        【{{item.city}}】【{{item.Type}}】{{item.value}}
+                        <span>
+                            【{{item.city}}】【{{item.Type}}】{{item.value}}
+                        </span>
                         <span>{{item.date}}</span>
-                        </li>
+                    </li>
                 </ul>
             </div>
 
@@ -186,9 +195,9 @@
             <div class="news-left news-center">                      
                   <ul id="con1">
                     <li v-for=" (item, index) in newsList" :key="index">
-                        【{{item.city}}】【{{item.Type}}】{{item.value}}
+                        <span>【{{item.city}}】【{{item.Type}}】{{item.value}}</span>
                         <span>{{item.date}}</span>
-                        </li>
+                    </li>
                 </ul>
             </div>
 
@@ -199,9 +208,9 @@
             <div class="news-left news-right">                      
                   <ul id="con1">
                     <li v-for=" (item, index) in newsList" :key="index" ref="rollul">
-                        【{{item.city}}】【{{item.Type}}】{{item.value}}
+                        <span>【{{item.city}}】【{{item.Type}}】{{item.value}}</span>
                         <span>{{item.date}}</span>
-                        </li>
+                    </li>
                 </ul>
             </div>
         </footer>
@@ -218,13 +227,15 @@
                 youyou:null,      //优优数据 
                 barList: [],      //房源数据柱状图
                 barPCT: [],       //计算出柱状图的百分比
-                newsList: null,   //新闻列表
-                orderData: null,  //门店数据
-                houseData: null,  //房源数据
-                todayScondHouse: 0, 
-                todayNewHouse: 0,
-                todayRenting: 0,
-                animate:true,
+                newsList: {},   //新闻列表
+                orderData: {},    //门店数据
+                houseData: {},    //房源数据
+                todayScondHouse: 0, //今日二手房数据,向上取整
+                todayNewHouse: 0,	//今日新房数据,向上取整
+                todayRenting: 0,	//今日租房数据,向上取整
+				animate:true,		//字体向上滚动的标记
+				tabelList: [],		//城市动态数据
+				mapInfo: {},		//获取的地图坐标以及用户购买数据
             }
         },   
         created() {
@@ -237,14 +248,18 @@
             setInterval(this.scroll,3000)         
         },
         mounted() {
-            this.youyouDrawLine();  //优优好房line图
-            this.getNews();
-            // this.getPie();
-            setTimeout(()=> {
-                this.calculateHouse()
-            },0)
+			this.youyouDrawLine();  //优优好房line图
+			this.getNews();
+			//  echarts 图表延迟执行，不延迟执行初始化找不到dom
+            setTimeout(()=> { 
+				this.calculateHouse() 
+				this.getMap()
+				this.getPie()
+				this.footerLine()
+				this.footerGraph()
+            },10)
         },
-        methods:{
+        methods: {
             // 请求header数据
             getHeaderData(){
                 this.$http({method: "get", url: '../../static/mock/headMock.json', dataType: 'json', crossDomain: true, cache: false})
@@ -261,31 +276,26 @@
                     this.week = weekArray[new Date(result).getDay()];//注意此处必须是先new一个Date
                 })   
             },
-            // 房源数据柱状图
+            // 房源数据
             getHouseData() {
                 this.$http({method: "get", url: '../../static/mock/houseData.json', dataType: 'json', crossDomain: true, cache: false})
                 .then(res=> {  
                     this.houseData = res.data;
 
                     //  得到的数据向上取整，计算出占用的比例 算出长度
-                    let todayScondHouse = Math.ceil(this.houseData.todayScondHouse)
-                    let todayNewHouse = Math.ceil(this.houseData.todayNewHouse)
-                    let todayRenting = Math.ceil(this.houseData.todayRenting)
-
-                    this.todayScondHouse = this.houseData.todayScondHouse / todayScondHouse
-                    this.todayNewHouse = this.houseData.todayNewHouse / todayNewHouse
-                    this.todayRenting = this.houseData.todayRenting / todayRenting
+                    this.todayScondHouse = this.houseData.todayScondHouse / Math.ceil(this.houseData.todayScondHouse)
+                    this.todayNewHouse = this.houseData.todayNewHouse / Math.ceil(this.houseData.todayNewHouse)
+                    this.todayRenting = this.houseData.todayRenting / Math.ceil(this.houseData.todayRenting)
                 })
             },
             // 计算房源数据柱状图占比率
-            calculateHouse(){
-                console.log('计算')   
+            calculateHouse(){ 
                 let proportionList = document.getElementsByClassName('item-proportion');
-                let defaultWidth = document.getElementsByClassName('item-default')[0].offsetWidth;
-                proportionList[0].style.width  = (this.todayScondHouse * defaultWidth)  + 'px'
-                proportionList[1].style.width  = (this.todayNewHouse * defaultWidth)  + 'px'
-                proportionList[2].style.width  = (this.todayRenting * defaultWidth)  + 'px'
-                console.log(proportionList)
+				let defaultWidth = document.getElementsByClassName('item-default')[0].offsetWidth;
+
+				proportionList[0].style.width = (this.todayScondHouse * defaultWidth) + 'px'
+                proportionList[1].style.width = (this.todayNewHouse * defaultWidth) + 'px'
+                proportionList[2].style.width = (this.todayRenting * defaultWidth) + 'px'
             },            
             // 优优好房折线图
             youyouDrawLine() {
@@ -294,21 +304,18 @@
                 .then(res=> {
                     youyouData = res.data;
                     // 基于准备好的dom，初始化echarts实例
-                    let myChart = this.$echarts.init(document.getElementById('youyou-line'))
+					let myChart = this.$echarts.init(document.getElementById('youyou-line'))
                     // 绘制图表
                     myChart.setOption({
                         title: {
                             text: ''
                         },
-                        tooltip: {
-                            trigger: 'axis'
-                        },
                         color:['#01cab3', '#f89f1d'],
-                        legend: {
+                        legend: {		// 图例设置
                             data: [
                                 {
                                     name: 'pv',
-                                    textStyle: { 
+                                    textStyle: { 	
                                         color: '#01cab3'          // 图例文字颜色
                                     }
                                 },
@@ -322,25 +329,26 @@
                             x: '50%',  
                             y: '5%'
                         },
-                        grid: {
+                        grid: {		// 调整图表距离初始化dom的距离              
                             left: '3%',
                             right: '4%',
                             bottom: '3%',
                             containLabel: true
                         },
-                        xAxis: {
+                        xAxis: {	//x轴的设置
                             type: 'category',
                             boundaryGap: false, 
                             data: ['周一','周二','周三','周四','周五','周六','周七'],
                             axisLabel: {
                                 show: true,
-                                textStyle: {
-                                    color: '#83ecf3'
-                                }
+                                textStyle: {                
+                                    color: '#83ecf3'	//x轴底部字体的颜色
+								},
+								interval: 0		//当x轴数据太多无法全部显示时, 调整间距可以全部显示
                             },
-                            axisLine: {
+                            axisLine: {		//x轴线的设置
                                 lineStyle: {
-                                    color: '#115372'
+                                    color: '#115372'	
                                 }
                             }
                                                         
@@ -406,77 +414,29 @@
                 })
             },
             //获取全国门店等数量
-            getOrderData(){
+            getOrderData(){  
                 this.$http({method: "get", url: '../../static/mock/quanguo.json', dataType: 'json', crossDomain: true, cache: false})
                 .then(res=> {
-                    this.orderData = res.data;
-                    //  字符串转换数组
-                    this.orderData.entrus = this.orderData.entrus.split('')       
+					res.data.entrus = res.data.entrus.split('')
+					this.orderData = res.data;  
+					console.log(this.orderData)
                 })                     
             },
-
-            // 获得饼图数据
-            getPie() {
-                let myChart = this.$echarts.init(document.getElementById('pie-rent'))
-                var option = {
-                    tooltip: {
-                        trigger: 'item',
-                        formatter: "{a} <br/>{b}: {c} ({d}%)"
-                    },
-                    legend: {
-                        orient: 'vertical',
-                        x: 'left',
-                        data: ['直达', '营销广告', '搜索引擎', '邮件营销', '联盟广告', '视频广告', '百度', '谷歌', '必应', '其他']
-                    },
-                    series: [{
-                        name: '访问来源',
-                        type: 'pie',
-                        selectedMode: 'single',
-                        radius: [0, '80%'],
-                        label: {
-                            normal: {
-                                position: 'inner',
-                                formatter: "{b}: {c} ({d}%)"
-                            }
-                        },
-                        labelLine: {
-                            normal: {
-                                show: false
-                            }
-                        },
-                        data: [{
-                                value: 335,
-                                name: '直达',
-                                selected: true
-                            },
-                            {
-                                value: 679,
-                                name: '营销广告'
-                            },
-                            {
-                                value: 1548,
-                                name: '搜索引擎'
-                            }
-                        ]
-                    }, ]
-                };
-                myChart.setOption(option, true);
-            },
             // 文字滚动
-            scroll(){
-                let con1 = this.$refs.rollul;
+            scroll(){  
+		        let con1 = this.$refs.rollul;
+				if(!con1[0]) return; 	//如果不存在则直接返回
                 con1[0].style.marginTop='30px';
                 this.animate=!this.animate;
-                var that = this; // 保存好this的指向
                 // 尾部添加，头部删除                
-                setTimeout(function(){
-                    that.newsList.push(that.newsList[0]);
-                    that.newsList.shift();
+                setTimeout(()=> {
+                    this.newsList.push(this.newsList[0]);
+                    this.newsList.shift();
                     con1[0].style.marginTop='0px';
-                    that.animate=!that.animate;  // animate取反防止出现回滚
+		            this.animate=!this.animate;  // animate取反防止出现回滚
                 },0)
             },
-            // 获取底部新闻资讯
+            // 获取底部新闻资讯 
             getNews(){
                 this.$http({method: "get", url: '../../static/mock/news.json', dataType: 'json', crossDomain: true, cache: false})
                 .then(res=> {
@@ -489,7 +449,405 @@
                 .then(res=> {
                     this.tabelList = res.data;
                 }) 
-            }
+			},
+			// 饼图
+    		getPie() {
+				let myChart = echarts.init(document.getElementById('pie-rent'))
+				let pieDeal = echarts.init(document.getElementById('pie-deal'))
+				console.log('饼图111')
+				console.log(document.getElementById('pie-deal')) 
+				// app.title = '饼图';
+				var option = {
+					tooltip: {
+						trigger: 'item',
+						formatter: "{a} <br/>{b}: {c} ({d}%)"
+					},
+					series: [{
+						name: '访问来源',
+						type: 'pie',
+						selectedMode: 'single',
+						radius: [0, '80%'],
+						label: {
+							normal: {
+								position: 'inner',      //字体文字设置到图表内部
+								formatter: "{d}%\n{b}"  //{a}：系列名。{b}：数据名。{c}：数据值。{d}：百分比。
+							}
+						},
+						labelLine: {
+							normal: {
+								show: false
+							}
+						},
+						data: [{
+								value: 335,
+								name: '房源',
+								selected: true
+							},
+							{
+								value: 679,
+								name: '成交'
+							},
+							{
+								value: 1548,
+								name: '租客'
+							}
+						]
+					}, ]
+				};
+				myChart.setOption(option, true);
+				pieDeal.setOption(option, true);
+			},
+			// 地图
+			getMap() {
+				this.$http({method: "get", url: '../../static/mock/map.json', dataType: 'json', crossDomain: true, cache: false})
+                .then(res=> {
+					// res.data.type:  1 为买房, 2为租房（自定义）
+                    this.mapInfo = res.data;
+					var dom = document.getElementById("main-maps"); 
+					var myChart = echarts.init(dom); //初始化
+					function randomData() {
+						return Math.round(Math.random()*1000);
+					}
+					// 配置
+					var option = {
+						visualMap: {
+							min: 0,
+							max: 2500,
+							left: 'left',
+							top: 'bottom',
+							text: ['高','低'],           // 文本，默认为数值文本
+							calculable: true,
+							show: false,
+							inRange: {
+								color: ['#02235c', '#6a9bef']
+							}                    
+						},
+						series: [
+							{
+								name: 'hft',
+								type: 'map',
+								mapType: 'china',
+								roam: false,
+								label: {
+									normal: {
+										show: true,
+										color: '#0ba6ff'
+									},
+									emphasis: {
+										show: true,
+										areaStyle:{
+											color:'red'
+										}
+									}
+								},
+								itemStyle:{
+									normal:{
+										label:{show:true},
+										borderWidth:1,//省份的边框宽度
+										borderColor:'#00effc',//省份的边框颜色
+									},
+									emphasis:{label:{show:true}}
+								},
+								data:[
+									{name: '北京',value: randomData() },
+									{name: '天津',value: randomData() },
+									{name: '上海',value: randomData() },
+									{name: '重庆',value: randomData() },
+									{name: '河北',value: randomData() },
+									{name: '河南',value: randomData() },
+									{name: '云南',value: randomData() },
+									{name: '辽宁',value: randomData() },
+									{name: '黑龙江',value: randomData() },
+									{name: '湖南',value: randomData() },
+									{name: '安徽',value: randomData() },
+									{name: '山东',value: randomData() },
+									{name: '新疆',value: randomData() },
+									{name: '江苏',value: randomData() },
+									{name: '浙江',value: randomData() },
+									{name: '江西',value: randomData() },
+									{name: '湖北',value: randomData() },
+									{name: '广西',value: randomData() },
+									{name: '甘肃',value: randomData() },
+									{name: '山西',value: randomData() },
+									{name: '内蒙古',value: randomData() },
+									{name: '陕西',value: randomData() },
+									{name: '吉林',value: randomData() },
+									{name: '福建',value: randomData() },
+									{name: '贵州',value: randomData() },
+									{name: '广东',value: randomData() },
+									{name: '青海',value: randomData() },
+									{name: '西藏',value: randomData() },
+									{name: '四川',value: randomData() },
+									{name: '宁夏',value: randomData() },
+									{name: '海南',value: randomData() },
+									{name: '台湾',value: randomData() },
+									{name: '香港',value: randomData() },
+									{name: '澳门',value: randomData() }
+								]
+							}
+						]
+					};
+					myChart.setOption(option, true);  
+
+					/**
+					 * 坐标系转换
+					 */ 
+					// 获取系列
+					var seriesModel = myChart.getModel().getSeriesByIndex(option.series.length - 1)
+					// 获取地理坐标系实例
+					var coordSys = seriesModel.coordinateSystem;
+					// dataToPoint 相当于 getPosByGeo	屏幕坐标
+					// var point = coordSys.dataToPoint([this.mapInfo.longitude, this.mapInfo.latitude]);
+					let newArr = []
+					console.log(this.mapInfo)
+					this.mapInfo.forEach(element=> {
+						let point2 = coordSys.dataToPoint([element.longitude, element.latitude])
+						newArr.push({point:point2, type: element.type})
+					}); 
+					// pointToData 相当于 getGeoByPos	地图坐标
+					var coord = coordSys.pointToData(point);	
+					console.log(this.mapInfo)
+					console.log(newArr)
+					// 给元素设置坐标
+					var pointTop = point[0] - this.$refs.point.clientHeight;
+					var pointLeft = point[1] - (this.$refs.point.clientWidth / 2); 
+					document.getElementsByClassName("point")[0].style.top = pointTop + "px"
+					document.getElementsByClassName("point")[0].style.left = pointLeft + "px"
+                }) 
+			},
+			// 底部折线图
+			footerLine(){ 
+				// 基于准备好的dom，初始化echarts实例 
+				let myChart = echarts.init(document.getElementById('footer-line'))
+				// 绘制图表
+				myChart.setOption({
+					tooltip: {
+						trigger: 'axis'
+					},
+					legend: {
+						// data:['出售委托','出租委托','租房分期'],
+						data: [
+							{
+				               name:'出售委托',
+				               textStyle: { 
+				                    color: '#f89f1d'          // 图例文字颜色
+				               }
+				            },
+							{
+				               name:'出租委托',
+				               textStyle: {
+				                    color: '#5c69d9'          // 图例文字颜色
+				               }
+				            },
+							{
+				               name:'租房分期',
+				               textStyle: {
+				                    color: '#3FF200'          // 图例文字颜色
+				               }
+				            },
+						],
+						y: '85%', // 'center' | 'bottom' | {number}
+						textStyle: {
+							color: '#fff'
+						}
+					},
+					color:['#f89f1d', '#5c69d9', '#3FF200'],
+					grid: {
+						left: '3%',
+						right: '4%',
+						bottom: '20%',
+						top:  '15%',
+						containLabel: true
+					},
+					xAxis: {
+						type: 'category',
+						boundaryGap: false,
+						data: ['01','02','03','04','05','06','07','08', '09','10','11','12','13'],
+						axisLine: {
+							lineStyle: {
+								color: '#115372'
+							}
+						},
+						axisLabel: {
+							show: true,
+							textStyle: {
+								color: '#83ecf3'
+							}
+						},
+						splitLine: {
+							show: true,
+							lineStyle:{
+								color: ['#115372'],
+								width: 1,
+								type: 'solid'
+							}
+						}
+					},
+					yAxis: {
+						type: 'value',
+						axisLabel: {
+							show: true,
+							textStyle: {
+								color: '#fff'
+							}
+						},
+						axisLine: {
+							lineStyle: {
+								color: '#115372'
+							}
+						},
+						splitNumber:5,
+						splitLine: {
+							show: true,
+							lineStyle:{
+								color: ['#115372'],
+								width: 1,
+								type: 'solid'
+							}
+						}
+					},
+					series: [
+						{
+							name:'出售委托',
+							type:'line',
+							stack: '总量',
+							data:[120, 132, 101, 134, 90, 230, 210,100,120,180,123,465,180,240]
+						},
+						{
+							name:'出租委托',
+							type:'line',
+							stack: '总量',
+							data:[220, 182, 191, 234, 290, 330, 310,210,100,120,180,123,465,180]
+						}, 
+						{
+							name:'租房分期',
+							type:'line',
+							stack: '总量',
+							data:[150, 232, 201, 154, 190, 330, 410,210,100,120,180,123,465,180]
+						}
+					]
+				})
+			},
+			// 底部曲线背景图
+			footerGraph(){ 
+				// 基于准备好的dom，初始化echarts实例 
+				let myChart = echarts.init(document.getElementById('footer-graph'))
+				// 绘制图表
+				myChart.setOption({
+					tooltip: {
+						trigger: 'axis'
+					},
+					grid: {
+						left: '3%',
+						top: '15%',
+						containLabel: true
+					},
+					legend: {
+						data: [
+							{
+				               name:'租赁',
+				               textStyle: { 
+				                    color: '#38aee1'          // 图例文字颜色
+				               }
+				            },
+							{
+				               name:'买卖',
+				               textStyle: { 
+				                    color: '#C7821E'          // 图例文字颜色
+				               }
+				            },   
+						],
+						y: '80%'
+					},
+					color: ["#C7821E", '#38aee1'],
+					calculable: true,
+					xAxis: [{
+						type: 'category',
+						boundaryGap: false,
+						data: ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13'],
+						axisLine: {
+							lineStyle: {
+								color: '#115372'
+							}
+						},
+						axisLabel: {
+							show: true,
+							textStyle: {
+								color: '#83ecf3'
+							}
+						}
+					}],
+					yAxis: {
+						ttype: 'value',
+						axisLabel: {
+							show: true,
+							textStyle: {
+								color: '#fff'
+							}
+						},
+						axisLine: {
+							lineStyle: {
+								color: '#115372'
+							}
+						},
+						splitNumber: 6,
+						splitLine: {
+							show: true,
+							lineStyle:{
+								color: ['#115372'],
+								width: 1,
+								type: 'solid'
+							}
+						}
+					},
+					series: [
+						{
+							name: '买卖',
+							type: 'line',
+							areaStyle: {
+								normal: {
+									type: 'default',
+									color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{
+										offset: 0,
+										color: '#C7821E'
+									}], false)
+								}
+							},
+							smooth: true,
+							itemStyle: {
+								normal: {
+									areaStyle: {
+										type: 'default'
+									}
+								}
+							},
+							data: [610, 312, 221, 654, 910, 630, 310, 521, 354, 560, 830, 310, 200]
+						},
+						{
+							name: '租赁',
+							type: 'line',
+							areaStyle: {
+								normal: {
+									type: 'default',
+									color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{
+										offset: 0,
+										color: '#155CA2'
+									} ], false)
+								}
+							},
+							smooth: true,
+							itemStyle: {
+								normal: {
+									areaStyle: {
+										type: 'default'
+									}
+								}
+							},
+							data: [136, 375, 380, 449, 114, 267, 142, 318, 357, 193, 421, 391, 180]
+						}
+					]
+				})
+			}
         },
         filters: {   
             // datetimes--传入的时间戳
@@ -502,389 +860,6 @@
             },
         }
     }
-
-    // 地图
-    function getMap() {
-        var dom = document.getElementById("main-maps"); 
-        var myChart = echarts.init(dom); //初始化
-        function randomData() {
-            return Math.round(Math.random()*1000);
-        }
-        // 配置
-        var option = {
-            visualMap: {
-                min: 0,
-                max: 2500,
-                left: 'left',
-                top: 'bottom',
-                text: ['高','低'],           // 文本，默认为数值文本
-                calculable: true,
-                show: false,
-                inRange: {
-                    color: ['#02235c', '#6a9bef']
-                }                    
-            },
-            series: [
-                {
-                    name: 'iphone3',
-                    type: 'map',
-                    mapType: 'china',
-                    roam: false,
-                    label: {
-                        normal: {
-                            show: true,
-                            color: '#0ba6ff'
-                        },
-                        emphasis: {
-                            show: true,
-                            areaStyle:{
-                                color:'red'
-                            }
-                        }
-                    },
-                    itemStyle:{
-                        normal:{
-                            label:{show:true},
-                            borderWidth:1,//省份的边框宽度
-                            borderColor:'#00effc',//省份的边框颜色
-                        },
-                        emphasis:{label:{show:true}}
-                    },
-                    data:[
-                        {name: '北京',value: randomData() },
-                        {name: '天津',value: randomData() },
-                        {name: '上海',value: randomData() },
-                        {name: '重庆',value: randomData() },
-                        {name: '河北',value: randomData() },
-                        {name: '河南',value: randomData() },
-                        {name: '云南',value: randomData() },
-                        {name: '辽宁',value: randomData() },
-                        {name: '黑龙江',value: randomData() },
-                        {name: '湖南',value: randomData() },
-                        {name: '安徽',value: randomData() },
-                        {name: '山东',value: randomData() },
-                        {name: '新疆',value: randomData() },
-                        {name: '江苏',value: randomData() },
-                        {name: '浙江',value: randomData() },
-                        {name: '江西',value: randomData() },
-                        {name: '湖北',value: randomData() },
-                        {name: '广西',value: randomData() },
-                        {name: '甘肃',value: randomData() },
-                        {name: '山西',value: randomData() },
-                        {name: '内蒙古',value: randomData() },
-                        {name: '陕西',value: randomData() },
-                        {name: '吉林',value: randomData() },
-                        {name: '福建',value: randomData() },
-                        {name: '贵州',value: randomData() },
-                        {name: '广东',value: randomData() },
-                        {name: '青海',value: randomData() },
-                        {name: '西藏',value: randomData() },
-                        {name: '四川',value: randomData() },
-                        {name: '宁夏',value: randomData() },
-                        {name: '海南',value: randomData() },
-                        {name: '台湾',value: randomData() },
-                        {name: '香港',value: randomData() },
-                        {name: '澳门',value: randomData() }
-                    ]
-                }
-            ]
-        };
-        myChart.setOption(option, true);
-    }
-    
-    // 饼图
-    function getPie() {
-        console.log('饼图')
-        console.log(document.getElementById('pie-deal'))
-        let myChart = echarts.init(document.getElementById('pie-rent'))
-        let pieDeal = echarts.init(document.getElementById('pie-deal'))
-        // app.title = '饼图';
-        var option = {
-            tooltip: {
-                trigger: 'item',
-                formatter: "{a} <br/>{b}: {c} ({d}%)"
-            },
-            series: [{
-                name: '访问来源',
-                type: 'pie',
-                selectedMode: 'single',
-                radius: [0, '80%'],
-                label: {
-                    normal: {
-                        position: 'inner',
-                        // formatter: "{b}: {c} ({d}%)"
-                    }
-                },
-                labelLine: {
-                    normal: {
-                        show: false
-                    }
-                },
-                data: [{
-                        value: 335,
-                        name: '房源',
-                        selected: true
-                    },
-                    {
-                        value: 679,
-                        name: '成交'
-                    },
-                    {
-                        value: 1548,
-                        name: '租客'
-                    }
-                ]
-            }, ]
-        };
-        myChart.setOption(option, true);
-        pieDeal.setOption(option, true);
-    }
-
-    // 底部折线图
-    function footerLine(){ 
-        // 基于准备好的dom，初始化echarts实例 
-        console.log('footerLine' )
-        console.log(document.getElementById('footer-line'))
-        let myChart = echarts.init(document.getElementById('footer-line'))
-        // 绘制图表
-        myChart.setOption({
-            tooltip: {
-                trigger: 'axis'
-            },
-            legend: {
-                // data:['出售委托','出租委托','租房分期'],
-                data: [
-                    {
-                       name:'出售委托',
-                       textStyle: { 
-                            color: '#f89f1d'          // 图例文字颜色
-                       }
-                    },
-                    {
-                       name:'出租委托',
-                       textStyle: {
-                            color: '#5c69d9'          // 图例文字颜色
-                       }
-                    },
-                    {
-                       name:'租房分期',
-                       textStyle: {
-                            color: '#3FF200'          // 图例文字颜色
-                       }
-                    },
-                ],
-                y: '85%', // 'center' | 'bottom' | {number}
-                textStyle: {
-                    color: '#fff'
-                }
-            },
-            color:['#f89f1d', '#5c69d9', '#3FF200'],
-            grid: {
-                left: '3%',
-                right: '4%',
-                bottom: '20%',
-                top:  '15%',
-                containLabel: true
-            },
-            xAxis: {
-                type: 'category',
-                boundaryGap: false,
-                data: ['01','02','03','04','05','06','07','08', '09','10','11','12','13'],
-                axisLine: {
-                    lineStyle: {
-                        color: '#115372'
-                    }
-                },
-                axisLabel: {
-                    show: true,
-                    textStyle: {
-                        color: '#83ecf3'
-                    }
-                },
-                splitLine: {
-                    show: true,
-                    lineStyle:{
-                        color: ['#115372'],
-                        width: 1,
-                        type: 'solid'
-                    }
-                }
-            },
-            yAxis: {
-                type: 'value',
-                axisLabel: {
-                    show: true,
-                    textStyle: {
-                        color: '#fff'
-                    }
-                },
-                axisLine: {
-                    lineStyle: {
-                        color: '#115372'
-                    }
-                },
-                splitNumber:5,
-                splitLine: {
-                    show: true,
-                    lineStyle:{
-                        color: ['#115372'],
-                        width: 1,
-                        type: 'solid'
-                    }
-                }
-            },
-            series: [
-                {
-                    name:'出售委托',
-                    type:'line',
-                    stack: '总量',
-                    data:[120, 132, 101, 134, 90, 230, 210,100,120,180,123,465,180,240]
-                },
-                {
-                    name:'出租委托',
-                    type:'line',
-                    stack: '总量',
-                    data:[220, 182, 191, 234, 290, 330, 310,210,100,120,180,123,465,180]
-                }, 
-                {
-                    name:'租房分期',
-                    type:'line',
-                    stack: '总量',
-                    data:[150, 232, 201, 154, 190, 330, 410,210,100,120,180,123,465,180]
-                }
-            ]
-        })
-    }
-
-    // 底部曲线背景图
-    function footerGraph(){ 
-        // 基于准备好的dom，初始化echarts实例 
-        let myChart = echarts.init(document.getElementById('footer-graph'))
-        // 绘制图表
-        myChart.setOption({
-            tooltip: {
-                trigger: 'axis'
-            },
-            grid: {
-                left: '3%',
-                top: '15%',
-                containLabel: true
-            },
-            legend: {
-                data: [
-                    {
-                       name:'租赁',
-                       textStyle: { 
-                            color: '#38aee1'          // 图例文字颜色
-                       }
-                    },
-                    {
-                       name:'买卖',
-                       textStyle: { 
-                            color: '#C7821E'          // 图例文字颜色
-                       }
-                    },   
-                ],
-                y: '80%'
-            },
-            color: ["#C7821E", '#38aee1'],
-            calculable: true,
-            xAxis: [{
-                type: 'category',
-                boundaryGap: false,
-                data: ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13'],
-                axisLine: {
-                    lineStyle: {
-                        color: '#115372'
-                    }
-                },
-                axisLabel: {
-                    show: true,
-                    textStyle: {
-                        color: '#83ecf3'
-                    }
-                }
-            }],
-            yAxis: {
-                ttype: 'value',
-                axisLabel: {
-                    show: true,
-                    textStyle: {
-                        color: '#fff'
-                    }
-                },
-                axisLine: {
-                    lineStyle: {
-                        color: '#115372'
-                    }
-                },
-                splitNumber: 6,
-                splitLine: {
-                    show: true,
-                    lineStyle:{
-                        color: ['#115372'],
-                        width: 1,
-                        type: 'solid'
-                    }
-                }
-            },
-            series: [
-                {
-                    name: '买卖',
-                    type: 'line',
-                    areaStyle: {
-                        normal: {
-                            type: 'default',
-                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{
-                                offset: 0,
-                                color: '#C7821E'
-                            }], false)
-                        }
-                    },
-                    smooth: true,
-                    itemStyle: {
-                        normal: {
-                            areaStyle: {
-                                type: 'default'
-                            }
-                        }
-                    },
-                    data: [610, 312, 221, 654, 910, 630, 310, 521, 354, 560, 830, 310, 200]
-                },
-                {
-                    name: '租赁',
-                    type: 'line',
-                    areaStyle: {
-                        normal: {
-                            type: 'default',
-                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{
-                                offset: 0,
-                                color: '#155CA2'
-                            } ], false)
-                        }
-                    },
-                    smooth: true,
-                    itemStyle: {
-                        normal: {
-                            areaStyle: {
-                                type: 'default'
-                            }
-                        }
-                    },
-                    data: [136, 375, 380, 449, 114, 267, 142, 318, 357, 193, 421, 391, 180]
-                }
-            ]
-        })
-    }
-    setTimeout(() => {
-        getMap()
-        getPie()
-        footerLine()
-        footerGraph()
-    }, 1000);
-
-
-
 </script>
 
 <style lang="scss">
@@ -1011,7 +986,6 @@ header{
                 font-size: 0.91rem;
             }
 
-
             #youyou-bar{
                 width: 17.54rem;
                 height: 10.96rem;
@@ -1043,7 +1017,7 @@ header{
 
                 }
 
-                .bar-item{
+                .bar-item{           
                     height: 2rem;
                     line-height: 2rem;
 
@@ -1072,8 +1046,6 @@ header{
                         .item-proportion{
                             height: 0.46rem;
                             background: linear-gradient(to right, #2690cf, #00fecc); 
-                            // background: #00fecc;
-                            // opacity: 1;
                             position: absolute;
                         }
                     }
@@ -1137,6 +1109,40 @@ header{
         height: 29.22rem;
         margin-left: 3rem;
         float: left;
+		position: relative;
+
+		#main-maps{
+			width: 38.51rem;
+        	height: 29.22rem;
+		}
+
+		.point{
+			width: 4.55rem;
+			height: 4.23rem;
+			background: url("../assets/chengjiao_01.gif") no-repeat;
+			background-size:100% 100%;
+			position: absolute;
+			top:367px;
+			left: 346px;
+			text-align: center;
+
+			p:nth-child(1){
+				font-size: 0.77rem;
+				margin-top: 0.3rem;
+				color: #ff0000;
+			}
+
+			p:nth-child(2){
+				font-size: 0.57rem;
+				color: #fff;
+				margin: 0.2rem 0;
+			}
+
+			p:nth-child(3){
+				font-size: 0.64rem;
+				color: #fff;
+			}
+		}
     }
 
     .main-order{
@@ -1148,6 +1154,35 @@ header{
         .order-item{
             height: 3.44rem;
             margin-top: 2.23rem;
+        }
+
+        div:nth-child(2){
+            position:relative;
+
+            p{
+                position:absolute;
+                left: 1.4rem;               
+            }
+        }
+
+        div:nth-child(3){
+            position:relative;
+
+            p{
+                position:absolute;
+                top: 0.1rem;
+                left: 1.5rem;
+            }
+        }
+
+        div:nth-child(4){
+            position:relative;
+
+            p{
+                position:absolute;
+                top: 0.2rem;
+                left: 1.5rem;
+            }
         }
 
         .entrustNum{
@@ -1193,6 +1228,7 @@ header{
         .num{
             font-size: 1.32rem;
             color: #00e4ff;
+            padding-left: 1.4rem;
         }
     }
 
@@ -1298,26 +1334,43 @@ footer{
     margin-top: 0.52rem;
     padding: 0 1.78rem;
     overflow: hidden;
+    display: flex;
+    justify-content: space-between;
 
     .news-left{
         width: 17.59rem;
         height: 12.67rem;
-        float: left;
         overflow: hidden;
-        // background-color: #02235c;
         border-radius: 0.14rem;
         border: solid 0.05rem rgba(56, 174, 225, 0.28);
         padding: 0.78rem 0.52rem;
         background: url('../assets/gundongback.png')  no-repeat; 
         background-size: 100% 100%; 
+        
 
         li{
             color:#333;
-            height:1.3rem;
-            font-size: 0.57rem;
-            color: #fff;
+            height:1.3rem;                     
+            font-size: 0.57rem;  
 
-            span{
+            .con-text{ 
+                width:14.9rem;                        
+                display:block;
+                text-overflow:ellipsis;
+                white-space:nowrap;
+                overflow:hidden;
+            }
+
+            span:nth-child(1){ 
+                width: 14.02rem;
+                color: #fff;
+                display: inline-block;
+                overflow: hidden;
+                text-overflow:ellipsis;
+                white-space: nowrap;
+            }
+
+            span:nth-child(2){
                 color: #22bbe7;
                 font-size: 0.39rem;
                 display: inline-block;
@@ -1333,39 +1386,46 @@ footer{
     .footer-line{
         width: 18.41rem;
         height: 12.67rem;
-        margin-left:1.7rem;
-        float: left;
         overflow: hidden;
         background-color: #02235c;
         border-radius: 0.14rem;
         border: solid 0.05rem rgba(56, 174, 225, 0.28);
-        background: url('../assets/housedataback.png')  no-repeat; 
+        background: url('../assets/housedataback.png') no-repeat; 
         background-size: 100% 100%; 
     }
 
     .news-center{
-        width: 17.59rem;
+        width: 18.43rem;
         height: 12.67rem;
-        margin-left: 1.7rem;
-        float: left;
+        
+        li {
+
+            span:nth-child(1){
+                width: 15rem;
+            }
+        }
     }
 
     .footer-graph{
         width: 18.41rem;
         height: 12.67rem;
-        margin-left: 1.7rem;
         background-color: #02235c;
         border-radius: 0.14rem;
-        border: solid 0.05rem rgba(56, 174, 225, 0.28);
-        float: left;   
+        border: solid 0.05rem rgba(56, 174, 225, 0.28); 
         background: url('../assets/housedataback.png')  no-repeat; 
         background-size: 100% 100%;  
     }
 
     .news-right{
-        width: 17.59rem;
+        width:  19.48rem;
         height: 12.67rem;
-        float: right;
+
+        li {
+
+            span:nth-child(1){
+                width: 15.89rem;
+            }
+        }
     }
 }
 </style>

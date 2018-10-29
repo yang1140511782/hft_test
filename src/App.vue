@@ -7,21 +7,21 @@
 
 <script>
 export default {
-  name: 'App'
-}
-</script>
+  name: "App"
+};
+</script>  
 
 <style>
-@import './style/common.scss';
+@import "./style/common.scss";
 #app {
-  font-family: 'Avenir', Helvetica, Arial, sans-serif;
+  font-family: "Avenir", Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #2c3e50;
-  background: url('./assets/background.jpg');
+  background: url("./assets/background.jpg");
   background-repeat: no-repeat;
   background-size: 100% 100%;
-  height: 56.5rem;  
+  height: 56.5rem;
   width: 100rem;
 }
 </style>
