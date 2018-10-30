@@ -8,11 +8,11 @@
         "latitude": "30.67"
     },
     {
-        "type": "2",
-        "title": "租房成交",
-        "city": "西安",
+        "type": "1",
+        "title": "买房成交",
+        "city": "福州",
         "price": "183万",
-        "longitude": "108.95",
-        "latitude": "34.27"
+        "longitude": "119.30",
+        "latitude": "26.08"
     }
 ]

@@ -7,9 +7,11 @@ import router from './router'
 import echarts from 'echarts'
 // 引入axios
 import axios from 'axios'
+import Utils from './lib/utils'
 Vue.config.productionTip = false   
 Vue.prototype.$http = axios   
-Vue.prototype.$echarts = echarts 
+Vue.prototype.$echarts = echarts
+Vue.use(Utils) 
 /* eslint-disable no-new */ 
 new Vue({
   el: '#app',

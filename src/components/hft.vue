@@ -100,18 +100,18 @@
 				<div id="main-maps">
 
 				</div>
-				<div class="point" ref="point">
-					<p>{{mapInfo.title}}</p> 
-					<p>{{mapInfo.city}}</p>
-					<p>{{mapInfo.price}}</p>
-				</div>
+                <div class="point" ref="point" v-for="(item, index) in mapInfo" :key="index">
+                    <p>{{item.title}}</p> 
+                    <p>{{item.city}}</p>
+                    <p>{{item.price}}</p>
+                </div>
             </div>
         
             <div class="main-order">
                 <div class="entrustNum">
                     <p>24小时委托量</p>
                     <ul>
-                        <li v-for="(item, index) in orderData.entrus" :key="index">{{item}}</li>
+                        <li v-for="(item, index) in orderData.entrus" :key="index" class="entrust-li">{{item}}</li>
                     </ul>
                 </div>
                 <div class="order-item">
@@ -235,7 +235,7 @@
                 todayRenting: 0,	//今日租房数据,向上取整
 				animate:true,		//字体向上滚动的标记
 				tabelList: [],		//城市动态数据
-				mapInfo: {},		//获取的地图坐标以及用户购买数据
+				mapInfo: [],		//获取的地图坐标以及用户购买数据
             }
         },   
         created() {
@@ -253,11 +253,11 @@
 			//  echarts 图表延迟执行，不延迟执行初始化找不到dom
             setTimeout(()=> { 
 				this.calculateHouse() 
-				this.getMap()
 				this.getPie()
 				this.footerLine()
 				this.footerGraph()
-            },10)
+				this.getMap()
+            },0)
         },
         methods: {
             // 请求header数据
@@ -280,9 +280,9 @@
             getHouseData() {
                 this.$http({method: "get", url: '../../static/mock/houseData.json', dataType: 'json', crossDomain: true, cache: false})
                 .then(res=> {  
-                    this.houseData = res.data;
+                    this.houseData = res.data;  
 
-                    //  得到的数据向上取整，计算出占用的比例 算出长度
+                    // 得到的数据向上取整，计算出占用的比例 算出长度
                     this.todayScondHouse = this.houseData.todayScondHouse / Math.ceil(this.houseData.todayScondHouse)
                     this.todayNewHouse = this.houseData.todayNewHouse / Math.ceil(this.houseData.todayNewHouse)
                     this.todayRenting = this.houseData.todayRenting / Math.ceil(this.houseData.todayRenting)
@@ -418,8 +418,14 @@
                 this.$http({method: "get", url: '../../static/mock/quanguo.json', dataType: 'json', crossDomain: true, cache: false})
                 .then(res=> {
 					res.data.entrus = res.data.entrus.split('')
-					this.orderData = res.data;  
-					console.log(this.orderData)
+                    this.orderData = res.data; 
+                    let liDom = document.getElementsByClassName("entrust-li")
+                    // created 钩子函数中，dom还没有生成，使用nextTick，实例挂载之后执行此方法
+                    this.$nextTick(()=> {
+                        this.orderData.entrus.forEach((element, index) => {
+                            this.numRunFun(0, element, liDom[index])    //调用数字滚动函数
+                        });
+                    })
                 })                     
             },
             // 文字滚动
@@ -498,98 +504,95 @@
 				pieDeal.setOption(option, true);
 			},
 			// 地图
-			getMap() {
-				this.$http({method: "get", url: '../../static/mock/map.json', dataType: 'json', crossDomain: true, cache: false})
+            getMap() {
+                this.$http({method: "get", url: '../../static/mock/map.json', dataType: 'json', crossDomain: true, cache: false})
                 .then(res=> {
-					// res.data.type:  1 为买房, 2为租房（自定义）
-                    this.mapInfo = res.data;
-					var dom = document.getElementById("main-maps"); 
-					var myChart = this.$echarts.init(dom); //初始化
-					function randomData() {
-						return Math.round(Math.random()*1000);
-					}
-					// 配置
-					var option = {
-						visualMap: {
-							min: 0,
-							max: 2500,
-							left: 'left',
-							top: 'bottom',
-							text: ['高','低'],           // 文本，默认为数值文本
-							calculable: true,
-							show: false,
-							inRange: {
-								color: ['#02235c', '#6a9bef']
-							}                    
-						},
-						series: [
-							{
-								name: 'hft',
-								type: 'map',
-								mapType: 'china',
-								roam: false,
-								label: {
-									normal: {
-										show: true,
-										color: '#0ba6ff'
-									},
-									emphasis: {
-										show: true,
-										areaStyle:{
-											color:'red'
-										}
-									}
-								},
-								itemStyle:{
-									normal:{
-										label:{show:true},
-										borderWidth:1,//省份的边框宽度
-										borderColor:'#00effc',//省份的边框颜色
-									},
-									emphasis:{label:{show:true}}
-								},
-								data:[
-									{name: '北京',value: randomData() },
-									{name: '天津',value: randomData() },
-									{name: '上海',value: randomData() },
-									{name: '重庆',value: randomData() },
-									{name: '河北',value: randomData() },
-									{name: '河南',value: randomData() },
-									{name: '云南',value: randomData() },
-									{name: '辽宁',value: randomData() },
-									{name: '黑龙江',value: randomData() },
-									{name: '湖南',value: randomData() },
-									{name: '安徽',value: randomData() },
-									{name: '山东',value: randomData() },
-									{name: '新疆',value: randomData() },
-									{name: '江苏',value: randomData() },
-									{name: '浙江',value: randomData() },
-									{name: '江西',value: randomData() },
-									{name: '湖北',value: randomData() },
-									{name: '广西',value: randomData() },
-									{name: '甘肃',value: randomData() },
-									{name: '山西',value: randomData() },
-									{name: '内蒙古',value: randomData() },
-									{name: '陕西',value: randomData() },
-									{name: '吉林',value: randomData() },
-									{name: '福建',value: randomData() },
-									{name: '贵州',value: randomData() },
-									{name: '广东',value: randomData() },
-									{name: '青海',value: randomData() },
-									{name: '西藏',value: randomData() },
-									{name: '四川',value: randomData() },
-									{name: '宁夏',value: randomData() },
-									{name: '海南',value: randomData() },
-									{name: '台湾',value: randomData() },
-									{name: '香港',value: randomData() },
-									{name: '澳门',value: randomData() }
-								]
-							}
-						]
-					};
-					myChart.setOption(option, true);  
-
-					/**
+                    var dom = document.getElementById("main-maps"); 
+                    var myChart = echarts.init(dom); //初始化
+                    function randomData() {
+                        return Math.round(Math.random()*1000);
+                    }
+                    // 配置
+                    var option = {
+                        visualMap: {
+                            min: 0,
+                            max: 2500,
+                            left: 'left',
+                            top: 'bottom',
+                            text: ['高','低'],           // 文本，默认为数值文本
+                            calculable: true,
+                            show: false,
+                            inRange: {
+                                color: ['#02235c', '#6a9bef']
+                            }                    
+                        },
+                        series: [
+                            {
+                                name: 'hft',
+                                type: 'map',
+                                mapType: 'china',
+                                roam: false,
+                                label: {
+                                    normal: {
+                                        show: true,
+                                        color: '#0ba6ff'
+                                    },
+                                    emphasis: {
+                                        show: true,
+                                        areaStyle:{
+                                            color:'red'
+                                        }
+                                    }
+                                },
+                                itemStyle:{
+                                    normal:{
+                                        label:{show:true},
+                                        borderWidth:1,//省份的边框宽度
+                                        borderColor:'#00effc',//省份的边框颜色
+                                    },
+                                    emphasis:{label:{show:true}}
+                                },
+                                data:[
+                                    {name: '北京',value: randomData() },
+                                    {name: '天津',value: randomData() },
+                                    {name: '上海',value: randomData() },
+                                    {name: '重庆',value: randomData() },
+                                    {name: '河北',value: randomData() },
+                                    {name: '河南',value: randomData() },
+                                    {name: '云南',value: randomData() },
+                                    {name: '辽宁',value: randomData() },
+                                    {name: '黑龙江',value: randomData() },
+                                    {name: '湖南',value: randomData() },
+                                    {name: '安徽',value: randomData() },
+                                    {name: '山东',value: randomData() },
+                                    {name: '新疆',value: randomData() },
+                                    {name: '江苏',value: randomData() },
+                                    {name: '浙江',value: randomData() },
+                                    {name: '江西',value: randomData() },
+                                    {name: '湖北',value: randomData() },
+                                    {name: '广西',value: randomData() },
+                                    {name: '甘肃',value: randomData() },
+                                    {name: '山西',value: randomData() },
+                                    {name: '内蒙古',value: randomData() },
+                                    {name: '陕西',value: randomData() },
+                                    {name: '吉林',value: randomData() },
+                                    {name: '福建',value: randomData() },
+                                    {name: '贵州',value: randomData() },
+                                    {name: '广东',value: randomData() },
+                                    {name: '青海',value: randomData() },
+                                    {name: '西藏',value: randomData() },
+                                    {name: '四川',value: randomData() },
+                                    {name: '宁夏',value: randomData() },
+                                    {name: '海南',value: randomData() },
+                                    {name: '台湾',value: randomData() },
+                                    {name: '香港',value: randomData() },
+                                    {name: '澳门',value: randomData() }
+                                ]
+                            }
+                        ]
+                    };                
+                    myChart.setOption(option, true);  
+            		/**
 					 * 坐标系转换
 					 */ 
 					// 获取系列
@@ -597,24 +600,35 @@
 					// 获取地理坐标系实例
 					var coordSys = seriesModel.coordinateSystem;
 					// dataToPoint 相当于 getPosByGeo	屏幕坐标
-					// var point = coordSys.dataToPoint([this.mapInfo.longitude, this.mapInfo.latitude]);
-					let newArr = []
-					console.log(this.mapInfo)
-					this.mapInfo.forEach(element=> {
+                    // var point = coordSys.dataToPoint([longitude, latitude]);
+                    
+                    // 循环把每个经纬度转换为屏幕坐标
+					res.data.forEach(element=> {
 						let point2 = coordSys.dataToPoint([element.longitude, element.latitude])
-						newArr.push({point:point2, type: element.type})
+                         this.mapInfo.push({
+                            point:point2, 
+                            type: element.type, 
+                            title: element.title, 
+                            city: element.city, 
+                            price: element.price
+                        })
 					}); 
 					// pointToData 相当于 getGeoByPos 地图坐标
-					// var coord = coordSys.pointToData(point);	
-					console.log(this.mapInfo)
-					console.log(newArr)
-					// 给元素设置坐标
-					var pointTop = point[0] - this.$refs.point.clientHeight;
-					var pointLeft = point[1] - (this.$refs.point.clientWidth / 2); 
-					document.getElementsByClassName("point")[0].style.top = pointTop + "px"
-					document.getElementsByClassName("point")[0].style.left = pointLeft + "px"
-                }) 
-			},
+                    // var coord = coordSys.pointToData(point);	 
+                    console.log('mapInfo')
+                    console.log(this.mapInfo)
+                    this.$nextTick(()=> {
+                        // 给每个元素设置在地图上的坐标
+                        this.mapInfo.forEach((el, index)=> {  
+                            let pointDom = document.getElementsByClassName("point");
+                            var pointLeft = el.point[0] - (pointDom[index].clientWidth / 2);
+                            var pointTop = el.point[1] - pointDom[index].clientHeight; 
+                            pointDom[index].style.top = pointTop + "px"
+                            pointDom[index].style.left = pointLeft + "px"
+                        })
+                    })
+                })
+            },
 			// 底部折线图
 			footerLine(){ 
 				// 基于准备好的dom，初始化echarts实例 
