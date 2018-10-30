@@ -101,7 +101,7 @@
 
 				</div>
 				<div class="point" ref="point">
-					<p>{{mapInfo.title}}</p>
+					<p>{{mapInfo.title}}</p> 
 					<p>{{mapInfo.city}}</p>
 					<p>{{mapInfo.price}}</p>
 				</div>
@@ -429,9 +429,9 @@
                 con1[0].style.marginTop='30px';
                 this.animate=!this.animate;
                 // 尾部添加，头部删除                
-                setTimeout(()=> {
+                setTimeout(()=> { 
                     this.newsList.push(this.newsList[0]);
-                    this.newsList.shift();
+                    this.newsList.shift(); 
                     con1[0].style.marginTop='0px';
 		            this.animate=!this.animate;  // animate取反防止出现回滚
                 },0)
@@ -452,8 +452,8 @@
 			},
 			// 饼图
     		getPie() {
-				let myChart = echarts.init(document.getElementById('pie-rent'))
-				let pieDeal = echarts.init(document.getElementById('pie-deal'))
+				let myChart = this.$echarts.init(document.getElementById('pie-rent'))
+				let pieDeal = this.$echarts.init(document.getElementById('pie-deal'))
 				console.log('饼图111')
 				console.log(document.getElementById('pie-deal')) 
 				// app.title = '饼图';
@@ -504,7 +504,7 @@
 					// res.data.type:  1 为买房, 2为租房（自定义）
                     this.mapInfo = res.data;
 					var dom = document.getElementById("main-maps"); 
-					var myChart = echarts.init(dom); //初始化
+					var myChart = this.$echarts.init(dom); //初始化
 					function randomData() {
 						return Math.round(Math.random()*1000);
 					}
@@ -604,8 +604,8 @@
 						let point2 = coordSys.dataToPoint([element.longitude, element.latitude])
 						newArr.push({point:point2, type: element.type})
 					}); 
-					// pointToData 相当于 getGeoByPos	地图坐标
-					var coord = coordSys.pointToData(point);	
+					// pointToData 相当于 getGeoByPos 地图坐标
+					// var coord = coordSys.pointToData(point);	
 					console.log(this.mapInfo)
 					console.log(newArr)
 					// 给元素设置坐标
@@ -618,7 +618,7 @@
 			// 底部折线图
 			footerLine(){ 
 				// 基于准备好的dom，初始化echarts实例 
-				let myChart = echarts.init(document.getElementById('footer-line'))
+				let myChart = this.$echarts.init(document.getElementById('footer-line'))
 				// 绘制图表
 				myChart.setOption({
 					tooltip: {
@@ -731,7 +731,7 @@
 			// 底部曲线背景图
 			footerGraph(){ 
 				// 基于准备好的dom，初始化echarts实例 
-				let myChart = echarts.init(document.getElementById('footer-graph'))
+				let myChart = this.$echarts.init(document.getElementById('footer-graph'))
 				// 绘制图表
 				myChart.setOption({
 					tooltip: {
